@@ -1,0 +1,26 @@
+﻿@model rhupolomolok.Models.LoginViewModel
+
+<div class="container mt-5" style="max-width: 450px;">
+    <h3 class="text-center mb-4">Login</h3>
+
+    <form asp-action="Login" method="post">
+        <div class="mb-3">
+            <label>Email</label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label>Password</label>
+            <input asp-for="Password" class="form-control" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="RememberMe" class="form-check-input" />
+            <label class="form-check-label">Remember Me</label>
+        </div>
+
+        <button class="btn btn-primary w-100">Login</button>
+    </form>
+</div>

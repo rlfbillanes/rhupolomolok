@@ -1,0 +1,27 @@
+﻿@model rhupolomolok.Models.Article
+
+<div class="container mt-4" style="max-width: 900px;">
+    <h3>Review Article</h3>
+
+    <p><strong>Title:</strong> @Model.Title</p>
+    <p><strong>Category:</strong> @Model.Category</p>
+    <p><strong>Submitted:</strong> @Model.CreatedDate.ToString("MMM dd, yyyy")</p>
+
+    <hr />
+
+    <div class="border p-3" style="background: #fafafa;">
+        @Html.Raw(Model.Content)
+    </div>
+
+    <hr />
+
+    <form method="post" asp-action="Approve" asp-route-id="@Model.Id" class="d-inline">
+        <button class="btn btn-success">Approve</button>
+    </form>
+
+    <form method="post" asp-action="Reject" asp-route-id="@Model.Id" class="d-inline ms-2">
+        <button class="btn btn-danger">Reject</button>
+    </form>
+
+    <a href="/Admin/Articles/Pending" class="btn btn-secondary ms-2">Back</a>
+</div>

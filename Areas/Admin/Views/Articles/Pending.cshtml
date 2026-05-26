@@ -1,0 +1,36 @@
+﻿@model IEnumerable<rhupolomolok.Models.Article>
+
+<div class="container mt-4">
+    <h3>Pending Articles</h3>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">No pending articles.</div>
+        return;
+    }
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Submitted</th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var a in Model)
+            {
+                <tr>
+                    <td>@a.Title</td>
+                    <td>@a.Category</td>
+                    <td>@a.CreatedDate.ToString("MMM dd, yyyy")</td>
+                    <td>
+                        <a href="/Admin/Articles/Review/@a.Id" class="btn btn-primary btn-sm">Review</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

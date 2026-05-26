@@ -1,0 +1,107 @@
+﻿@model rhupolomolok.Models.Article
+
+<div class="container mt-4" style="max-width: 900px;">
+    <h3>Edit Article</h3>
+
+    @* SUCCESS MESSAGE *@
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model.IsSubmitted)
+    {
+        <div class="alert alert-info">
+            This article has been submitted and can no longer be edited.
+        </div>
+        <a href="/Contributor/Articles/Index" class="btn btn-secondary">Back</a>
+        return;
+    }
+
+    <form id="editForm">
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" id="ArticleId" value="@Model.Id" />
+
+        <div class="mb-3">
+            <label>Title</label>
+            <input asp-for="Title" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Category</label>
+            <input asp-for="Category" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label>Content</label>
+            <textarea asp-for="Content" id="Content" class="form-control" rows="10"></textarea>
+        </div>
+    </form>
+
+    <div id="autosave-status" class="text-muted mt-2">Draft saved</div>
+
+    <button type="button" id="submitBtn" class="btn btn-success mt-3">
+        Submit for Review
+    </button>
+</div>
+
+<!-- CKEditor -->
+<script src="https://cdn.ckeditor.com/ckeditor5/41.0.0/classic/ckeditor.js"></script>
+
+<script>
+    let editorInstance;
+    let autoSaveTimer;
+
+    ClassicEditor
+        .create(document.querySelector('#Content'))
+        .then(editor => {
+            editorInstance = editor;
+
+            editor.model.document.on('change:data', () => {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(autoSaveDraft, 1500);
+            });
+        })
+        .catch(error => console.error(error));
+
+    function autoSaveDraft() {
+        const articleId = document.getElementById("ArticleId").value;
+
+        const data = {
+            id: articleId,
+            title: document.querySelector('[name="Title"]').value,
+            category: document.querySelector('[name="Category"]').value,
+            content: editorInstance.getData()
+        };
+
+        fetch('/Contributor/Articles/AutoSave', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector("input[name='__RequestVerificationToken']").value
+            },
+            body: JSON.stringify(data)
+        })
+        .then(() => {
+            document.getElementById('autosave-status').innerText = "Draft saved";
+        });
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', () => {
+        const articleId = document.getElementById("ArticleId").value;
+
+        fetch(`/Contributor/Articles/SubmitFinal/${articleId}`, {
+            method: 'POST',
+            headers: {
+                'RequestVerificationToken': document.querySelector("input[name='__RequestVerificationToken']").value
+            }
+        })
+        .then(() => {
+            window.location.href = "/Contributor/Articles/Index";
+        });
+    });
+</script>
