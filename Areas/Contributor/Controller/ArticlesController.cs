@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using rhupolomolok.Data;
 using rhupolomolok.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace rhupolomolok.Areas.Contributor.Controllers
 {
@@ -45,24 +45,26 @@ namespace rhupolomolok.Areas.Contributor.Controllers
         }
 
         // ---------------------------------------------------------
-        // CREATE (POST) — FIXED
+        // CREATE (POST)
         // ---------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Article model)
         {
             if (!ModelState.IsValid)
+            {
                 return View(model);
+            }
 
             model.CreatedByUserId = _userManager.GetUserId(User);
-            model.Status = "Draft";
             model.CreatedDate = DateTime.UtcNow;
-            model.IsSubmitted = false;
+            model.Status = "Draft";
 
             _context.Articles.Add(model);
             await _context.SaveChangesAsync();
 
-            // Redirect to Edit so auto-save can begin
+            TempData["Success"] = "Record was saved successfully.";
+
             return RedirectToAction("Edit", new { id = model.Id });
         }
 
@@ -84,14 +86,16 @@ namespace rhupolomolok.Areas.Contributor.Controllers
         }
 
         // ---------------------------------------------------------
-        // EDIT (POST) — Only used if manually saving
+        // EDIT (POST)
         // ---------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Article model)
         {
             if (!ModelState.IsValid)
+            {
                 return View(model);
+            }
 
             var article = await _context.Articles.FindAsync(model.Id);
             if (article == null)
@@ -107,7 +111,9 @@ namespace rhupolomolok.Areas.Contributor.Controllers
 
             await _context.SaveChangesAsync();
 
-            return RedirectToAction("Index");
+            TempData["Success"] = "Changes saved successfully.";
+
+            return RedirectToAction("Edit", new { id = model.Id });
         }
 
         // ---------------------------------------------------------
