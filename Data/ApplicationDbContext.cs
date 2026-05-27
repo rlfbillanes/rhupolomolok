@@ -12,6 +12,9 @@ namespace rhupolomolok.Data
         }
 
         public DbSet<Article> Articles { get; set; }
+        public DbSet<ArticleMedia> ArticleMedia { get; set; }
+        public DbSet<Category> Categories { get; set; }
 
-    }   
+
+    }
 }

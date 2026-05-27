@@ -39,8 +39,13 @@ namespace rhupolomolok.Areas.Contributor.Controllers
         // CREATE (GET)
         // ---------------------------------------------------------
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            ViewBag.Categories = await _context.Categories
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+
             return View();
         }
 
@@ -49,10 +54,14 @@ namespace rhupolomolok.Areas.Contributor.Controllers
         // ---------------------------------------------------------
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(Article model)
+        public async Task<IActionResult> Create(
+            Article model,
+            List<IFormFile> ImageFiles,
+            IFormFile? VideoFile)
         {
             if (!ModelState.IsValid)
             {
+                ViewBag.Categories = await _context.Categories.ToListAsync();
                 return View(model);
             }
 
@@ -63,8 +72,76 @@ namespace rhupolomolok.Areas.Contributor.Controllers
             _context.Articles.Add(model);
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Record was saved successfully.";
+            var folder = Path.Combine("wwwroot/uploads/articles", model.Id.ToString());
+            Directory.CreateDirectory(folder);
 
+            // IMAGE UPLOADS
+            if (ImageFiles != null && ImageFiles.Count > 0)
+            {
+                if (ImageFiles.Count > 3)
+                {
+                    ModelState.AddModelError("", "Maximum of 3 images allowed.");
+                    ViewBag.Categories = await _context.Categories.ToListAsync();
+                    return View(model);
+                }
+
+                foreach (var img in ImageFiles)
+                {
+                    if (!img.FileName.ToLower().EndsWith(".jpg"))
+                    {
+                        ModelState.AddModelError("", "Only JPG images are allowed.");
+                        ViewBag.Categories = await _context.Categories.ToListAsync();
+                        return View(model);
+                    }
+
+                    var fileName = Guid.NewGuid() + ".jpg";
+                    var filePath = Path.Combine(folder, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await img.CopyToAsync(stream);
+                    }
+
+                    _context.ArticleMedia.Add(new ArticleMedia
+                    {
+                        ArticleId = model.Id,
+                        MediaType = "Image",
+                        FilePath = $"/uploads/articles/{model.Id}/{fileName}",
+                        FileSize = img.Length
+                    });
+                }
+            }
+
+            // VIDEO UPLOAD
+            if (VideoFile != null)
+            {
+                if (!VideoFile.FileName.ToLower().EndsWith(".mp4"))
+                {
+                    ModelState.AddModelError("", "Only MP4 videos are allowed.");
+                    ViewBag.Categories = await _context.Categories.ToListAsync();
+                    return View(model);
+                }
+
+                var fileName = Guid.NewGuid() + ".mp4";
+                var filePath = Path.Combine(folder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await VideoFile.CopyToAsync(stream);
+                }
+
+                _context.ArticleMedia.Add(new ArticleMedia
+                {
+                    ArticleId = model.Id,
+                    MediaType = "Video",
+                    FilePath = $"/uploads/articles/{model.Id}/{fileName}",
+                    FileSize = VideoFile.Length
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Record was saved successfully.";
             return RedirectToAction("Edit", new { id = model.Id });
         }
 
@@ -82,6 +159,15 @@ namespace rhupolomolok.Areas.Contributor.Controllers
             if (article == null)
                 return NotFound();
 
+            ViewBag.Categories = await _context.Categories
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+
+            ViewBag.Media = await _context.ArticleMedia
+                .Where(m => m.ArticleId == id)
+                .ToListAsync();
+
             return View(article);
         }
 
@@ -94,6 +180,7 @@ namespace rhupolomolok.Areas.Contributor.Controllers
         {
             if (!ModelState.IsValid)
             {
+                ViewBag.Categories = await _context.Categories.ToListAsync();
                 return View(model);
             }
 
@@ -105,54 +192,128 @@ namespace rhupolomolok.Areas.Contributor.Controllers
                 return RedirectToAction("Index");
 
             article.Title = model.Title;
-            article.Category = model.Category;
+            article.CategoryId = model.CategoryId;
             article.Content = model.Content;
             article.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Changes saved successfully.";
-
             return RedirectToAction("Edit", new { id = model.Id });
         }
 
         // ---------------------------------------------------------
-        // AUTO-SAVE ENDPOINT
+        // UPLOAD MEDIA
         // ---------------------------------------------------------
         [HttpPost]
-        public async Task<IActionResult> AutoSave([FromBody] Article model)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadMedia(
+            int articleId,
+            List<IFormFile> ImageFiles,
+            IFormFile? VideoFile)
         {
-            var article = await _context.Articles.FindAsync(model.Id);
+            var article = await _context.Articles.FindAsync(articleId);
             if (article == null)
                 return NotFound();
 
-            if (article.IsSubmitted)
-                return BadRequest("Cannot edit submitted article.");
+            var folder = Path.Combine("wwwroot/uploads/articles", articleId.ToString());
+            Directory.CreateDirectory(folder);
 
-            article.Title = model.Title;
-            article.Category = model.Category;
-            article.Content = model.Content;
-            article.UpdatedDate = DateTime.UtcNow;
+            var existingImages = await _context.ArticleMedia
+                .Where(m => m.ArticleId == articleId && m.MediaType == "Image")
+                .CountAsync();
+
+            var existingVideos = await _context.ArticleMedia
+                .Where(m => m.ArticleId == articleId && m.MediaType == "Video")
+                .CountAsync();
+
+            // IMAGE LIMIT
+            if (ImageFiles != null && ImageFiles.Count > 0)
+            {
+                int remainingSlots = 3 - existingImages;
+
+                if (remainingSlots <= 0)
+                {
+                    TempData["Success"] = "You already uploaded the maximum of 3 images.";
+                    return RedirectToAction("Edit", new { id = articleId });
+                }
+
+                if (ImageFiles.Count > remainingSlots)
+                {
+                    TempData["Success"] = $"You can only upload {remainingSlots} more image(s).";
+                    return RedirectToAction("Edit", new { id = articleId });
+                }
+
+                foreach (var img in ImageFiles)
+                {
+                    if (!img.FileName.ToLower().EndsWith(".jpg"))
+                        continue;
+
+                    var fileName = Guid.NewGuid() + ".jpg";
+                    var filePath = Path.Combine(folder, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await img.CopyToAsync(stream);
+                    }
+
+                    _context.ArticleMedia.Add(new ArticleMedia
+                    {
+                        ArticleId = articleId,
+                        MediaType = "Image",
+                        FilePath = $"/uploads/articles/{articleId}/{fileName}",
+                        FileSize = img.Length
+                    });
+                }
+            }
+
+            // VIDEO LIMIT
+            if (VideoFile != null)
+            {
+                if (existingVideos >= 1)
+                {
+                    TempData["Success"] = "You already uploaded a video.";
+                    return RedirectToAction("Edit", new { id = articleId });
+                }
+
+                var fileName = Guid.NewGuid() + ".mp4";
+                var filePath = Path.Combine(folder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await VideoFile.CopyToAsync(stream);
+                }
+
+                _context.ArticleMedia.Add(new ArticleMedia
+                {
+                    ArticleId = articleId,
+                    MediaType = "Video",
+                    FilePath = $"/uploads/articles/{articleId}/{fileName}",
+                    FileSize = VideoFile.Length
+                });
+            }
 
             await _context.SaveChangesAsync();
 
-            return Ok();
+            TempData["Success"] = "Media uploaded successfully.";
+            return RedirectToAction("Edit", new { id = articleId });
         }
 
         // ---------------------------------------------------------
-        // SUBMIT FOR REVIEW
+        // DELETE MEDIA
         // ---------------------------------------------------------
         [HttpPost]
-        public async Task<IActionResult> SubmitFinal(int id)
+        public async Task<IActionResult> DeleteMedia(int id)
         {
-            var article = await _context.Articles.FindAsync(id);
-            if (article == null)
+            var media = await _context.ArticleMedia.FindAsync(id);
+            if (media == null)
                 return NotFound();
 
-            article.Status = "Pending";
-            article.IsSubmitted = true;
-            article.UpdatedDate = DateTime.UtcNow;
+            var physicalPath = Path.Combine("wwwroot", media.FilePath.TrimStart('/'));
+            if (System.IO.File.Exists(physicalPath))
+                System.IO.File.Delete(physicalPath);
 
+            _context.ArticleMedia.Remove(media);
             await _context.SaveChangesAsync();
 
             return Ok();

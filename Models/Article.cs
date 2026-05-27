@@ -13,8 +13,10 @@ namespace rhupolomolok.Models
         [Required]
         public string Content { get; set; } = string.Empty;
 
+        // Category relationship
         [Required]
-        public string Category { get; set; } = string.Empty;
+        public int CategoryId { get; set; }
+        public Category? Category { get; set; }
 
         public string Status { get; set; } = "Draft";
 
@@ -22,6 +24,7 @@ namespace rhupolomolok.Models
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedDate { get; set; }
+
         public bool IsSubmitted { get; set; } = false;
     }
 }

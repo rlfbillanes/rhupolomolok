@@ -14,28 +14,60 @@
     <form asp-area="Contributor"
           asp-controller="Articles"
           asp-action="Create"
-          method="post">
+          method="post"
+          enctype="multipart/form-data">
 
         @Html.AntiForgeryToken()
-
         @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
+        <!-- TITLE -->
         <div class="mb-3">
             <label asp-for="Title" class="form-label"></label>
             <input asp-for="Title" class="form-control" />
             <span asp-validation-for="Title" class="text-danger"></span>
         </div>
 
+        <!-- CATEGORY DROPDOWN -->
         <div class="mb-3">
-            <label asp-for="Category" class="form-label"></label>
-            <input asp-for="Category" class="form-control" />
-            <span asp-validation-for="Category" class="text-danger"></span>
+            <label class="form-label">Category</label>
+
+            <select asp-for="CategoryId"
+                    class="form-control"
+                    asp-items="@(ViewBag.Categories != null
+                                            ? new SelectList(ViewBag.Categories, "Id", "Name")
+                                            : new List<SelectListItem>())">
+                <option value="">-- Select Category --</option>
+            </select>
+
+            <span asp-validation-for="CategoryId" class="text-danger"></span>
         </div>
 
+        <!-- CONTENT -->
         <div class="mb-3">
             <label asp-for="Content" class="form-label"></label>
-            <textarea asp-for="Content" class="form-control" rows="10"></textarea>
+            <textarea asp-for="Content" class="form-control" rows="6"></textarea>
             <span asp-validation-for="Content" class="text-danger"></span>
+        </div>
+
+        <!-- IMAGE UPLOAD (MAX 3 JPG) -->
+        <div class="mb-3">
+            <label class="form-label">Upload Images (max 3, JPG only)</label>
+            <input type="file"
+                   name="ImageFiles[]"
+                   accept=".jpg"
+                   multiple
+                   class="form-control" />
+            <small class="text-muted">You may upload up to 3 JPG images.</small>
+        </div>
+
+        <!-- VIDEO UPLOAD (MAX 1 MP4) -->
+        <div class="mb-3">
+            <label class="form-label">Upload Video (max 1, MP4 only)</label>
+            <input type="file"
+                   name="VideoFile"
+                   accept="video/mp4"
+                   class="form-control" />
+            <small class="text-muted">Only one MP4 video allowed (max size limit enforced).</small>
         </div>
 
         <button type="submit" class="btn btn-primary">
