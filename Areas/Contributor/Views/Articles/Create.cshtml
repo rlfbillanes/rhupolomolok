@@ -1,77 +1,195 @@
 ﻿@model rhupolomolok.Models.Article
 
-<div class="container mt-4" style="max-width: 900px;">
-    <h3>Create Article</h3>
-
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+<style>
+    /* Apple‑style form aesthetics */
+    .apple-input {
+        border: 1px solid #d2d2d7;
+        border-radius: 12px;
+        padding: 14px 16px;
+        font-size: 1.05rem;
+        transition: border-color .2s ease;
     }
 
-    <form asp-area="Contributor"
-          asp-controller="Articles"
-          asp-action="Create"
-          method="post"
-          enctype="multipart/form-data">
+        .apple-input:focus {
+            border-color: #0071e3;
+            box-shadow: 0 0 0 4px rgba(0,113,227,0.15);
+        }
 
-        @Html.AntiForgeryToken()
-        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    .apple-label {
+        font-weight: 600;
+        margin-bottom: 6px;
+        font-size: 0.95rem;
+    }
 
-        <!-- TITLE -->
-        <div class="mb-3">
-            <label asp-for="Title" class="form-label"></label>
-            <input asp-for="Title" class="form-control" />
-            <span asp-validation-for="Title" class="text-danger"></span>
+    .apple-section {
+        background: #fff;
+        border: 1px solid #e5e5e7;
+        border-radius: 18px;
+        padding: 32px;
+        margin-bottom: 32px;
+    }
+
+    .preview-thumb {
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid #e5e5e7;
+    }
+</style>
+
+<!-- CENTERED WRAPPER -->
+<div class="d-flex justify-content-center align-items-start" style="min-height: 100vh; padding-top: 40px; padding-bottom: 40px;">
+
+    <div style="width: 100%; max-width: 820px;">
+
+        <!-- HEADER -->
+        <div class="text-center mb-5">
+            <h2 class="fw-bold" style="font-size: 2rem;">Create Article</h2>
+            <p class="text-muted" style="font-size: 1.05rem;">Provide the details below to publish your content.</p>
         </div>
 
-        <!-- CATEGORY DROPDOWN -->
-        <div class="mb-3">
-            <label class="form-label">Category</label>
+        <!-- SUCCESS MESSAGE -->
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                @TempData["Success"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        }
 
-            <select asp-for="CategoryId"
-                    class="form-control"
-                    asp-items="@(ViewBag.Categories != null
-                                            ? new SelectList(ViewBag.Categories, "Id", "Name")
-                                            : new List<SelectListItem>())">
-                <option value="">-- Select Category --</option>
-            </select>
+        <!-- FORM -->
+        <form asp-area="Contributor"
+              asp-controller="Articles"
+              asp-action="Create"
+              method="post"
+              enctype="multipart/form-data">
 
-            <span asp-validation-for="CategoryId" class="text-danger"></span>
-        </div>
+            @Html.AntiForgeryToken()
+            @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
 
-        <!-- CONTENT -->
-        <div class="mb-3">
-            <label asp-for="Content" class="form-label"></label>
-            <textarea asp-for="Content" class="form-control" rows="6"></textarea>
-            <span asp-validation-for="Content" class="text-danger"></span>
-        </div>
+            <!-- ARTICLE DETAILS -->
+            <div class="apple-section">
 
-        <!-- IMAGE UPLOAD (MAX 3 JPG) -->
-        <div class="mb-3">
-            <label class="form-label">Upload Images (max 3, JPG only)</label>
-            <input type="file"
-                   name="ImageFiles[]"
-                   accept=".jpg"
-                   multiple
-                   class="form-control" />
-            <small class="text-muted">You may upload up to 3 JPG images.</small>
-        </div>
+                <!-- TITLE -->
+                <div class="mb-4">
+                    <label asp-for="Title" class="apple-label">Title</label>
+                    <input asp-for="Title"
+                           class="apple-input w-100"
+                           placeholder="Enter a clear and descriptive title" />
+                    <span asp-validation-for="Title" class="text-danger small"></span>
+                </div>
 
-        <!-- VIDEO UPLOAD (MAX 1 MP4) -->
-        <div class="mb-3">
-            <label class="form-label">Upload Video (max 1, MP4 only)</label>
-            <input type="file"
-                   name="VideoFile"
-                   accept="video/mp4"
-                   class="form-control" />
-            <small class="text-muted">Only one MP4 video allowed (max size limit enforced).</small>
-        </div>
+                <!-- CATEGORY -->
+                <div class="mb-4">
+                    <label class="apple-label">Category</label>
+                    <select asp-for="CategoryId"
+                            class="apple-input w-100"
+                            asp-items="@(ViewBag.Categories != null
+                                                            ? new SelectList(ViewBag.Categories, "Id", "Name")
+                                                            : new List<SelectListItem>())">
+                        <option value="">-- Select Category --</option>
+                    </select>
+                    <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                </div>
 
-        <button type="submit" class="btn btn-primary">
-            Save & Continue Editing
-        </button>
-    </form>
+                <!-- CONTENT -->
+                <div class="mb-4">
+                    <label asp-for="Content" class="apple-label">Content</label>
+                    <textarea asp-for="Content"
+                              class="apple-input w-100"
+                              rows="8"
+                              placeholder="Write your article content here..."></textarea>
+                    <span asp-validation-for="Content" class="text-danger small"></span>
+                </div>
+
+            </div>
+
+            <!-- MEDIA SECTION -->
+            <div class="apple-section">
+
+                <h5 class="fw-bold mb-4" style="font-size: 1.25rem;">Media Uploads</h5>
+
+                <!-- IMAGE UPLOAD -->
+                <div class="mb-4">
+                    <label class="apple-label">Upload Images (max 3, JPG only)</label>
+                    <input type="file"
+                           id="imageInput"
+                           name="ImageFiles"
+                           accept=".jpg"
+                           multiple
+                           class="apple-input w-100" />
+                    <small class="text-muted">You may upload up to 3 JPG images.</small>
+
+                    <!-- IMAGE PREVIEW -->
+                    <div id="imagePreview" class="row mt-3 g-3"></div>
+                </div>
+
+                <!-- VIDEO UPLOAD -->
+                <div class="mb-4">
+                    <label class="apple-label">Upload Video (max 1, MP4 only)</label>
+                    <input type="file"
+                           id="videoInput"
+                           name="VideoFile"
+                           accept="video/mp4"
+                           class="apple-input w-100" />
+                    <small class="text-muted">Only one MP4 video allowed.</small>
+
+                    <!-- VIDEO PREVIEW -->
+                    <div id="videoPreview" class="mt-3"></div>
+                </div>
+
+            </div>
+
+            <!-- SUBMIT BUTTON -->
+            <button type="submit"
+                    class="btn btn-primary btn-lg w-100 rounded-3 fw-semibold py-2"
+                    style="font-size: 1.1rem;">
+                Save & Continue Editing
+            </button>
+
+        </form>
+
+    </div>
+
 </div>
+
+<!-- LIVE PREVIEW SCRIPT (unchanged) -->
+<script>
+    document.getElementById("imageInput").addEventListener("change", function () {
+        const preview = document.getElementById("imagePreview");
+        preview.innerHTML = "";
+
+        Array.from(this.files).forEach(file => {
+            if (!file.type.includes("image")) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const col = document.createElement("div");
+                col.classList.add("col-md-4");
+
+                col.innerHTML = `
+                    <div class="preview-thumb">
+                        <img src="${e.target.result}" class="w-100" style="height: 150px; object-fit: cover;" />
+                    </div>
+                `;
+                preview.appendChild(col);
+            };
+            reader.readAsDataURL(file);
+        });
+    });
+
+    document.getElementById("videoInput").addEventListener("change", function () {
+        const preview = document.getElementById("videoPreview");
+        preview.innerHTML = "";
+
+        const file = this.files[0];
+        if (!file || !file.type.includes("video")) return;
+
+        const url = URL.createObjectURL(file);
+
+        preview.innerHTML = `
+            <video class="w-100 rounded-3" height="220" controls>
+                <source src="${url}" type="video/mp4">
+            </video>
+        `;
+    });
+</script>

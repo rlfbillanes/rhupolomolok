@@ -1,8 +1,11 @@
 ﻿@model rhupolomolok.Models.Article
 
-<div class="container mt-4" style="max-width: 900px;">
+<div class="container py-4" style="max-width: 1000px;">
 
-    <h3>Edit Article</h3>
+    <div class="mb-4">
+        <h3 class="fw-bold">Edit Article</h3>
+        <p class="text-muted mb-0">Update your article details or manage media files.</p>
+    </div>
 
     @if (TempData["Success"] != null)
     {
@@ -12,8 +15,9 @@
         </div>
     }
 
-    <div class="card mb-4">
-        <div class="card-body">
+    <!-- ARTICLE FORM -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body p-4">
 
             <form asp-area="Contributor"
                   asp-controller="Articles"
@@ -25,52 +29,50 @@
 
                 <!-- TITLE -->
                 <div class="mb-3">
-                    <label asp-for="Title" class="form-label"></label>
-                    <input asp-for="Title" class="form-control" />
-                    <span asp-validation-for="Title" class="text-danger"></span>
+                    <label asp-for="Title" class="form-label fw-semibold"></label>
+                    <input asp-for="Title" class="form-control form-control-lg" />
+                    <span asp-validation-for="Title" class="text-danger small"></span>
                 </div>
 
-                <!-- CATEGORY DROPDOWN -->
+                <!-- CATEGORY -->
                 <div class="mb-3">
-                    <label class="form-label">Category</label>
-
+                    <label class="form-label fw-semibold">Category</label>
                     <select asp-for="CategoryId"
-                            class="form-control"
+                            class="form-select form-select-lg"
                             asp-items="@(ViewBag.Categories != null
                                                             ? new SelectList(ViewBag.Categories, "Id", "Name")
                                                             : new List<SelectListItem>())">
                     </select>
-
-                    <span asp-validation-for="CategoryId" class="text-danger"></span>
+                    <span asp-validation-for="CategoryId" class="text-danger small"></span>
                 </div>
 
                 <!-- CONTENT -->
                 <div class="mb-3">
-                    <label asp-for="Content" class="form-label"></label>
+                    <label asp-for="Content" class="form-label fw-semibold"></label>
                     <textarea asp-for="Content" class="form-control" rows="8"></textarea>
-                    <span asp-validation-for="Content" class="text-danger"></span>
+                    <span asp-validation-for="Content" class="text-danger small"></span>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="submit" class="btn btn-primary btn-lg w-100">Save Changes</button>
+
             </form>
 
         </div>
     </div>
 
     <!-- MEDIA SECTION -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0">Media Files</h5>
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white py-3">
+            <h5 class="fw-bold mb-0">Media Files</h5>
         </div>
 
-        <div class="card-body">
+        <div class="card-body p-4">
 
-            <!-- EXISTING MEDIA -->
-            <div class="row">
+            <div class="row g-3">
                 @foreach (var media in ViewBag.Media)
                 {
-                    <div class="col-md-4 mb-3" id="media-card-@media.Id">
-                        <div class="card shadow-sm">
+                    <div class="col-md-4" id="media-card-@media.Id">
+                        <div class="card shadow-sm border-0">
 
                             @if (media.MediaType == "Image")
                             {
@@ -83,24 +85,22 @@
                                 </video>
                             }
 
-                            <div class="card-body p-2">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <small class="text-muted">@media.MediaType</small>
-                                    <button class="btn btn-sm btn-danger delete-media-btn"
-                                            data-id="@media.Id">
-                                        Delete
-                                    </button>
-                                </div>
+                            <div class="card-body text-center p-2">
+                                <button class="btn btn-outline-danger btn-sm delete-media-btn"
+                                        data-id="@media.Id">
+                                    Delete
+                                </button>
                             </div>
+
                         </div>
                     </div>
                 }
             </div>
 
-            <hr />
+            <hr class="my-4" />
 
             <!-- UPLOAD MORE MEDIA -->
-            <h6>Upload More Media</h6>
+            <h5 class="fw-bold mb-3">Upload More Media</h5>
 
             <form asp-area="Contributor"
                   asp-controller="Articles"
@@ -112,40 +112,29 @@
                 <input type="hidden" name="articleId" value="@Model.Id" />
 
                 <div class="mb-3">
-                    <label class="form-label">Add Images (JPG only, max 3 total)</label>
-                    <input type="file"
-                           name="ImageFiles[]"
-                           accept=".jpg"
-                           multiple
-                           class="form-control" />
+                    <label class="form-label fw-semibold">Add Images (JPG only, max 3 total)</label>
+                    <input type="file" name="ImageFiles" accept=".jpg" multiple class="form-control" />
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Add Video (MP4 only, max 1)</label>
-                    <input type="file"
-                           name="VideoFile"
-                           accept="video/mp4"
-                           class="form-control" />
+                    <label class="form-label fw-semibold">Add Video (MP4 only, max 1)</label>
+                    <input type="file" name="VideoFile" accept="video/mp4" class="form-control" />
                 </div>
 
-                <button type="submit" class="btn btn-secondary">Upload Media</button>
+                <button type="submit" class="btn btn-secondary w-100">Upload Media</button>
+
             </form>
 
         </div>
     </div>
 
-
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-
         document.querySelectorAll(".delete-media-btn").forEach(btn => {
-
             btn.addEventListener("click", function () {
-
-                if (!confirm("Are you sure you want to delete this media file?"))
-                    return;
+                if (!confirm("Are you sure you want to delete this media file?")) return;
 
                 const mediaId = this.getAttribute("data-id");
 
@@ -159,13 +148,11 @@
                 .then(response => {
                     if (response.ok) {
                         const card = document.getElementById(`media-card-${mediaId}`);
-                        card.style.transition = "opacity 0.4s";
                         card.style.opacity = "0";
-                        setTimeout(() => card.remove(), 400);
+                        setTimeout(() => card.remove(), 300);
                     }
                 });
             });
         });
-
     });
 </script>
